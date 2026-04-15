@@ -1,31 +1,49 @@
-# Byte-compiled / optimized / DLL files
+# =========================
+# Python cache
+# =========================
 __pycache__/
-*.py[cod]
-*$py.class
+*.pyc
+*.pyo
+*.pyd
 
-# PyInstaller
-dist/
-build/
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-
-# Virtual environment
+# =========================
+# Virtual environments
+# =========================
 venv/
 env/
+.venv/
 
-# macOS specific files
+# =========================
+# PyInstaller builds
+# =========================
+build/
+dist/
+*.spec
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS generated files
+# =========================
 .DS_Store
+Thumbs.db
+
+# =========================
+# Matplotlib cache
+# =========================
+.matplotlib/
+
+# =========================
+# Excel temp files
+# =========================
+~$*.xlsx
