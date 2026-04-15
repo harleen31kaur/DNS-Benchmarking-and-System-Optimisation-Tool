@@ -1,12 +1,12 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk
 import socket
 import threading
 import time
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# ---------------- DNS LIST ----------------
+
 DEFAULT_DNS_SERVERS = {
     'Google': '8.8.8.8',
     'Cloudflare': '1.1.1.1',
@@ -14,7 +14,6 @@ DEFAULT_DNS_SERVERS = {
     'Quad9': '9.9.9.9'
 }
 
-# ---------------- THEME ----------------
 THEME = {
     'bg': '#1e1e1e',
     'card': '#2b2b2b',
@@ -23,7 +22,7 @@ THEME = {
     'button': '#00897b'
 }
 
-# ---------------- LATENCY ----------------
+
 def measure_latency(dns_ip, timeout=2):
     try:
         start = time.time()
@@ -33,7 +32,7 @@ def measure_latency(dns_ip, timeout=2):
     except:
         return None
 
-# ---------------- APP ----------------
+
 class DNSAnalyzerApp:
     def __init__(self, root):
         self.root = root
@@ -46,10 +45,10 @@ class DNSAnalyzerApp:
 
         self.setup_ui()
 
-    # ---------- UI ----------
+  
     def setup_ui(self):
 
-        # HEADER
+        
         header = tk.Frame(self.root, bg=THEME['bg'])
         header.pack(fill=tk.X, padx=20, pady=10)
 
@@ -61,8 +60,8 @@ class DNSAnalyzerApp:
                  font=("Segoe UI", 10),
                  bg=THEME['bg'], fg="gray").pack(anchor="w")
 
-        # INPUT CARD
-        input_card = tk.Frame(self.root, bg=THEME['card'], bd=0)
+       
+        input_card = tk.Frame(self.root, bg=THEME['card'])
         input_card.pack(fill=tk.X, padx=20, pady=10)
 
         tk.Label(input_card, text="Add Custom DNS",
@@ -78,11 +77,10 @@ class DNSAnalyzerApp:
         tk.Button(row, text="➕ Add", bg=THEME['button'], fg="white",
                   relief="flat", command=self.add_dns).pack(side=tk.RIGHT)
 
-        # CONTROL CARD
+        
         control_card = tk.Frame(self.root, bg=THEME['card'])
         control_card.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-        # BUTTON
         top_bar = tk.Frame(control_card, bg=THEME['card'])
         top_bar.pack(fill=tk.X, padx=10, pady=5)
 
@@ -95,7 +93,7 @@ class DNSAnalyzerApp:
         self.progress = ttk.Progressbar(top_bar)
         self.progress.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=10)
 
-        # TABLE
+        
         self.tree = ttk.Treeview(control_card,
                                 columns=("IP", "Latency"),
                                 show='headings', height=6)
@@ -108,18 +106,18 @@ class DNSAnalyzerApp:
 
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # GRAPH
+        
         self.figure = plt.Figure(figsize=(6, 3), dpi=100)
         self.ax = self.figure.add_subplot(111)
 
         self.canvas = FigureCanvasTkAgg(self.figure, master=control_card)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # STATUS
+        
         self.status = tk.Label(self.root, text="", bg=THEME['bg'], fg="lightgreen")
         self.status.pack(pady=5)
 
-    # ---------- ADD DNS ----------
+    
     def add_dns(self):
         ip = self.entry.get().strip()
         if ip:
@@ -129,12 +127,12 @@ class DNSAnalyzerApp:
         else:
             self.status.config(text="⚠️ Enter valid IP")
 
-    # ---------- START ----------
+    
     def start_analysis(self):
         self.analyze_btn.config(state="disabled")
         threading.Thread(target=self.analyze).start()
 
-    # ---------- ANALYSIS ----------
+    
     def analyze(self):
         self.tree.delete(*self.tree.get_children())
         self.results = []
@@ -170,7 +168,7 @@ class DNSAnalyzerApp:
 
         self.analyze_btn.config(state="normal")
 
-    # ---------- GRAPH ----------
+   
     def draw_graph(self):
         self.ax.clear()
 
@@ -178,14 +176,20 @@ class DNSAnalyzerApp:
         values = [lat if isinstance(lat, float) else 0 for _, _, lat in self.results]
 
         self.ax.barh(names, values)
+
         self.ax.set_title("DNS Latency")
-        self.ax.set_xlabel("ms")
+        self.ax.set_xlabel("Latency (ms)", labelpad=10)
+
         self.ax.grid(True, linestyle="--", alpha=0.3)
-        self.figure.tight_layout() 
+
+        
+        self.figure.tight_layout()
+        self.figure.subplots_adjust(bottom=0.2)
+
         self.canvas.draw()
 
 
-# ---------------- RUN ----------------
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = DNSAnalyzerApp(root)
