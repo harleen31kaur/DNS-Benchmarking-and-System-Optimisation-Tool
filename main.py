@@ -89,10 +89,7 @@ class DNSApp:
         tk.Button(self.sidebar, text="Export CSV", command=self.export_csv).pack(fill=tk.X, padx=10, pady=5)
         tk.Button(self.sidebar, text="Export Excel", command=self.export_excel).pack(fill=tk.X, padx=10, pady=5)
 
-        self.entry = tk.Entry(self.sidebar)
-        self.entry.pack(fill=tk.X, padx=10, pady=10)
-
-        tk.Button(self.sidebar, text="Add DNS", command=self.add_dns).pack(fill=tk.X, padx=10)
+        tk.Button(self.sidebar, text="+ Add Custom DNS", command=self.add_dns).pack(fill=tk.X, padx=10, pady=10)
 
         self.progress = ttk.Progressbar(self.sidebar)
         self.progress.pack(fill=tk.X, padx=10, pady=10)
@@ -227,9 +224,52 @@ class DNSApp:
 
     # ================= DNS ================= #
     def add_dns(self):
-        ip = self.entry.get().strip()
-        if ip:
-            self.dns[f"Custom-{ip}"] = ip
+        # Create popup dialog window
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Add Custom DNS")
+        dialog.geometry("350x180")
+        dialog.resizable(False, False)
+        dialog.grab_set()
+
+        # Center dialog on screen
+        dialog.transient(self.root)
+
+        # DNS Name Label & Entry
+        tk.Label(dialog, text="DNS Name:", font=("Segoe UI", 10)).pack(pady=10, padx=10, anchor="w")
+        name_entry = tk.Entry(dialog, font=("Segoe UI", 10))
+        name_entry.pack(fill=tk.X, padx=10, pady=5)
+        name_entry.focus()
+
+        # DNS Address Label & Entry
+        tk.Label(dialog, text="DNS Address (IP):", font=("Segoe UI", 10)).pack(pady=10, padx=10, anchor="w")
+        addr_entry = tk.Entry(dialog, font=("Segoe UI", 10))
+        addr_entry.pack(fill=tk.X, padx=10, pady=5)
+
+        # Button frame
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=15)
+
+        def save_dns():
+            name = name_entry.get().strip()
+            addr = addr_entry.get().strip()
+            
+            if not name or not addr:
+                self.add_log("Error: Both name and address required")
+                return
+            
+            # Add DNS to dictionary
+            self.dns[name] = addr
+            self.add_log(f"DNS Added: {name} → {addr}")
+            dialog.destroy()
+            
+            # Run analysis immediately
+            self.run_analysis()
+
+        # OK Button
+        tk.Button(btn_frame, text="OK", command=save_dns, width=10, bg="#10b981", fg="white").pack(side=tk.LEFT, padx=5)
+        
+        # Cancel Button
+        tk.Button(btn_frame, text="Cancel", command=dialog.destroy, width=10).pack(side=tk.LEFT, padx=5)
 
     # ================= LIVE ================= #
     def toggle_live(self):
