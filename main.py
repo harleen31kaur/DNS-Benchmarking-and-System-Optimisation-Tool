@@ -211,7 +211,9 @@ class DNSApp:
         self.ax.set_xlabel("DNS Servers", color=text_color)
         self.ax.set_ylabel("Latency (ms)", color=text_color)
 
-        self.ax.tick_params(colors=text_color)
+        
+        self.ax.tick_params(axis='x', colors=text_color, pad=-3)
+        self.ax.tick_params(axis='y', colors=text_color)
 
         # GRID
         self.ax.grid(True, linestyle="--", color=grid, alpha=0.5)
