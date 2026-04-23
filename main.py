@@ -42,7 +42,7 @@ def ping(ip):
 class DNSApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("DNS Enterprise Analyzer")
+        self.root.title("DNS Benchmarking and System Optimization Tool")
         self.root.geometry("1200x800")
         self.root.minsize(1000, 650)
 
@@ -600,7 +600,7 @@ class DNSApp:
         # Update graph background
         self.draw_graph()
 
-        self.add_log(f"Theme switched → {self.theme_mode}")
+        # Don't log theme changes during initialization
 
     # ================= THEME TOGGLE ================= #
     def toggle_theme(self):
