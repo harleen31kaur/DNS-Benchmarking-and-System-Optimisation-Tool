@@ -42,7 +42,7 @@ def ping(ip):
 class DNSApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("DNS Benchmarking and System Optimization Tool")
+        self.root.title("DNS Enterprise Analyzer")
         self.root.geometry("1200x800")
         self.root.minsize(1000, 650)
 
@@ -113,7 +113,7 @@ class DNSApp:
         self.topbar = ttk.Frame(self.root, style='Card.TFrame')
         self.topbar.grid(row=0, column=0, columnspan=2, sticky="nsew")
 
-        self.title = ttk.Label(self.topbar, text="DNS Benchmarking and System Optimization Tool", style='Title.TLabel')
+        self.title = ttk.Label(self.topbar, text="DNS ENTERPRISE ANALYZER", style='Title.TLabel')
         self.title.pack(side=tk.LEFT, padx=15)
 
         self.status = ttk.Label(self.topbar, text="IDLE", style='Status.TLabel')
@@ -138,7 +138,6 @@ class DNSApp:
         ttk.Button(self.sidebar, text="Export", command=self.export_dialog).pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Button(self.sidebar, text="+ Add Custom DNS", command=self.add_dns).pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(self.sidebar, text="− Delete DNS", command=self.delete_dns).pack(fill=tk.X, padx=10, pady=5)
 
         self.progress = ttk.Progressbar(self.sidebar)
         self.progress.pack(fill=tk.X, padx=10, pady=10)
@@ -187,9 +186,12 @@ class DNSApp:
 
     # ================= ANALYZE ================= #
     def run_analysis(self):
+        if getattr(self, '_running', False):
+            return
         threading.Thread(target=self._run, daemon=True).start()
 
     def _run(self):
+        self._running = True
         self.tree.delete(*self.tree.get_children())
         self.results = []
 
@@ -212,6 +214,7 @@ class DNSApp:
 
         self.update_ui(best)
         self.draw_graph()
+        self._running = False
 
     # ================= UI ================= #
     def update_ui(self, best):
@@ -373,73 +376,7 @@ class DNSApp:
         ttk.Button(btn_frame, text="OK", command=save_dns).pack(side=tk.LEFT, padx=6)
         ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=6)
 
-    # ================= DELETE DNS ================= #
-    def delete_dns(self):
-        """Show a dialog listing all current DNS entries with delete buttons"""
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Delete DNS")
-        dialog.geometry("360x320")
-        dialog.resizable(False, False)
-        dialog.grab_set()
-        dialog.transient(self.root)
-
-        if self.theme_mode == "dark":
-            dialog.configure(bg="#0f172a")
-        else:
-            dialog.configure(bg="#f3f4f6")
-
-        ttk.Label(dialog, text="Select a DNS entry to delete:", style='Title.TLabel').pack(pady=(14, 8), padx=14, anchor="w")
-
-        list_frame = ttk.Frame(dialog, style='TFrame')
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=14, pady=4)
-
-        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL)
-        listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set, font=("Segoe UI", 10),
-                             selectmode=tk.SINGLE, activestyle="dotbox")
-        scrollbar.config(command=listbox.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        # Apply theme colors to listbox
-        if self.theme_mode == "dark":
-            listbox.configure(bg="#1f2937", fg="white", selectbackground="#38bdf8", selectforeground="white")
-        else:
-            listbox.configure(bg="#ffffff", fg="black", selectbackground="#3b82f6", selectforeground="white")
-
-        dns_names = list(self.dns.keys())
-        for name in dns_names:
-            listbox.insert(tk.END, f"{name}  ({self.dns[name]})")
-
-        def confirm_delete():
-            sel = listbox.curselection()
-            if not sel:
-                messagebox.showerror("No Selection", "Please select a DNS entry to delete.", parent=dialog)
-                return
-
-            name = dns_names[sel[0]]
-
-            # Prevent deleting if only one entry remains
-            if len(self.dns) <= 1:
-                messagebox.showerror("Cannot Delete", "At least one DNS entry must remain.", parent=dialog)
-                return
-
-            confirmed = messagebox.askyesno(
-                "Confirm Delete",
-                f"Are you sure you want to delete '{name}' ({self.dns[name]})?",
-                parent=dialog
-            )
-            if confirmed:
-                del self.dns[name]
-                self.add_log(f"DNS Deleted: {name}")
-                dialog.destroy()
-                self.run_analysis()
-
-        btn_frame = ttk.Frame(dialog, style='TFrame')
-        btn_frame.pack(pady=12)
-
-        ttk.Button(btn_frame, text="Delete", command=confirm_delete).pack(side=tk.LEFT, padx=6)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=6)
-
+    
     # ================= LIVE ================= #
     def toggle_live(self):
         self.live = not self.live
@@ -668,7 +605,7 @@ class DNSApp:
         # Update graph background
         self.draw_graph()
 
-        # Don't log theme changes during initialization
+        self.add_log(f"Theme switched → {self.theme_mode}")
 
     # ================= THEME TOGGLE ================= #
     def toggle_theme(self):
