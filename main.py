@@ -277,7 +277,7 @@ class DNSApp:
         """Add custom DNS with ttk-based dialog for cross-platform consistency"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Add Custom DNS")
-        dialog.geometry("350x210")
+        dialog.geometry("350x230")
         dialog.resizable(False, False)
         dialog.grab_set()
         dialog.transient(self.root)
@@ -288,11 +288,25 @@ class DNSApp:
         else:
             dialog.configure(bg="#f3f4f6")
 
+        MAX_NAME_LEN = 30
+
         # Use ttk widgets for consistency
         ttk.Label(dialog, text="DNS Name:", style='TLabel').pack(pady=(14, 0), padx=14, anchor="w")
         name_entry = ttk.Entry(dialog, font=("Segoe UI", 10))
-        name_entry.pack(fill=tk.X, padx=14, pady=4)
+        name_entry.pack(fill=tk.X, padx=14, pady=(4, 0))
         name_entry.focus()
+
+        name_count_label = ttk.Label(dialog, text=f"0 / {MAX_NAME_LEN}", style='TLabel')
+        name_count_label.pack(padx=14, anchor="e")
+
+        def on_name_change(*args):
+            current = len(name_entry.get())
+            if current > MAX_NAME_LEN:
+                name_entry.delete(MAX_NAME_LEN, tk.END)
+                current = MAX_NAME_LEN
+            name_count_label.config(text=f"{current} / {MAX_NAME_LEN}")
+
+        name_entry.bind("<KeyRelease>", on_name_change)
 
         ttk.Label(dialog, text="DNS Address (IP):", style='TLabel').pack(pady=(8, 0), padx=14, anchor="w")
         addr_entry = ttk.Entry(dialog, font=("Segoe UI", 10))
@@ -301,12 +315,54 @@ class DNSApp:
         btn_frame = ttk.Frame(dialog, style='TFrame')
         btn_frame.pack(pady=16)
 
+        def validate_ip(ip):
+            """Validate IPv4 address format: four octets, each 0-255"""
+            parts = ip.split(".")
+            if len(parts) != 4:
+                return False
+            for part in parts:
+                if not part.isdigit():
+                    return False
+                if not (0 <= int(part) <= 255):
+                    return False
+            return True
+
         def save_dns():
             name = name_entry.get().strip()
             addr = addr_entry.get().strip()
-            if not name or not addr:
-                messagebox.showerror("Error", "Both name and address are required")
+
+            # ── VALIDATION ── #
+            if not name:
+                messagebox.showerror("Validation Error", "DNS Name cannot be empty.", parent=dialog)
+                name_entry.focus()
                 return
+
+            if len(name) < 2:
+                messagebox.showerror("Validation Error", "DNS Name must be at least 2 characters long.", parent=dialog)
+                name_entry.focus()
+                return
+
+            if name in self.dns:
+                messagebox.showerror("Validation Error", f"A DNS entry named '{name}' already exists.", parent=dialog)
+                name_entry.focus()
+                return
+
+            if not addr:
+                messagebox.showerror("Validation Error", "DNS IP Address cannot be empty.", parent=dialog)
+                addr_entry.focus()
+                return
+
+            if not validate_ip(addr):
+                messagebox.showerror("Validation Error", "Invalid IP Address.\nPlease enter a valid IPv4 address (e.g. 8.8.8.8).", parent=dialog)
+                addr_entry.focus()
+                return
+
+            if addr in self.dns.values():
+                messagebox.showerror("Validation Error", f"The IP address '{addr}' is already in the DNS list.", parent=dialog)
+                addr_entry.focus()
+                return
+
+            # ── SAVE ── #
             self.dns[name] = addr
             self.add_log(f"DNS Added: {name} → {addr}")
             dialog.destroy()
