@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, messagebox
 import socket
 import threading
 import time
@@ -46,6 +46,12 @@ class DNSApp:
         self.root.geometry("1200x800")
         self.root.minsize(1000, 650)
 
+        # Detect OS for platform-specific adjustments
+        self.os_name = platform.system()
+
+        # Initialize ttk styles for cross-platform consistency
+        self.setup_ttk_styles()
+
         self.dns = DNS_SERVERS.copy()
         self.results = []
         self.live = False
@@ -55,6 +61,48 @@ class DNSApp:
         self.build_graph()
         self.apply_theme()
 
+    # ================= TTK STYLES SETUP ================= #
+    def setup_ttk_styles(self):
+        """Setup ttk styles for cross-platform consistency"""
+        self.style = ttk.Style()
+
+        # Use 'clam' theme for better cross-platform consistency
+        try:
+            self.style.theme_use('clam')
+        except tk.TclError:
+            # Fallback to default theme if clam is not available
+            pass
+
+        # Configure base styles
+        self.style.configure('TFrame', background='#ffffff')
+        self.style.configure('Card.TFrame', background='#f3f4f6')
+
+        # Button styles
+        self.style.configure('TButton',
+                           font=('Segoe UI', 9),
+                           padding=5)
+
+        # Label styles
+        self.style.configure('TLabel',
+                           font=('Segoe UI', 9),
+                           background='#ffffff')
+
+        self.style.configure('Title.TLabel',
+                           font=('Segoe UI', 11, 'bold'),
+                           background='#f3f4f6')
+
+        self.style.configure('Status.TLabel',
+                           font=('Segoe UI', 9),
+                           background='#f3f4f6')
+
+        # Treeview styles
+        self.style.configure('Treeview',
+                           font=('Segoe UI', 9),
+                           rowheight=25)
+
+        self.style.configure('Treeview.Heading',
+                           font=('Segoe UI', 10, 'bold'))
+
     # ================= UI ================= #
     def build_ui(self):
 
@@ -62,49 +110,50 @@ class DNSApp:
         self.root.grid_columnconfigure(1, weight=1)
 
         # TOP BAR
-        self.topbar = tk.Frame(self.root)
+        self.topbar = ttk.Frame(self.root, style='Card.TFrame')
         self.topbar.grid(row=0, column=0, columnspan=2, sticky="nsew")
 
-        self.title = tk.Label(self.topbar, text="DNS ENTERPRISE ANALYZER", font=("Segoe UI", 11, "bold"))
+        self.title = ttk.Label(self.topbar, text="DNS ENTERPRISE ANALYZER", style='Title.TLabel')
         self.title.pack(side=tk.LEFT, padx=15)
 
-        self.status = tk.Label(self.topbar, text="IDLE")
+        self.status = ttk.Label(self.topbar, text="IDLE", style='Status.TLabel')
         self.status.pack(side=tk.RIGHT, padx=15)
 
-        tk.Button(self.topbar, text="Theme", command=self.toggle_theme).pack(side=tk.RIGHT, padx=5)
+        self.theme_btn = ttk.Button(self.topbar, text="Theme", command=self.toggle_theme)
+        self.theme_btn.pack(side=tk.RIGHT, padx=5)
 
         # SIDEBAR
-        self.sidebar = tk.Frame(self.root, width=260)
+        self.sidebar = ttk.Frame(self.root, width=260, style='Card.TFrame')
         self.sidebar.grid(row=1, column=0, sticky="ns")
         self.sidebar.pack_propagate(False)
 
-        tk.Label(self.sidebar, text="CONTROL PANEL", font=("Segoe UI", 10, "bold")).pack(pady=10)
+        ttk.Label(self.sidebar, text="CONTROL PANEL", style='Title.TLabel').pack(pady=10)
 
-        tk.Button(self.sidebar, text="Analyze", command=self.run_analysis).pack(fill=tk.X, padx=10, pady=5)
-        self.live_btn = tk.Button(self.sidebar, text="Live Mode", command=self.toggle_live)
+        ttk.Button(self.sidebar, text="Analyze", command=self.run_analysis).pack(fill=tk.X, padx=10, pady=5)
+        self.live_btn = ttk.Button(self.sidebar, text="Live Mode", command=self.toggle_live)
         self.live_btn.pack(fill=tk.X, padx=10, pady=5)
-        tk.Button(self.sidebar, text="Apply Fastest DNS", command=self.apply_fastest_dns).pack(fill=tk.X, padx=10, pady=5)
+        ttk.Button(self.sidebar, text="Apply Fastest DNS", command=self.apply_fastest_dns).pack(fill=tk.X, padx=10, pady=5)
 
         # ── SINGLE EXPORT BUTTON ── #
-        tk.Button(self.sidebar, text="Export", command=self.export_dialog).pack(fill=tk.X, padx=10, pady=5)
+        ttk.Button(self.sidebar, text="Export", command=self.export_dialog).pack(fill=tk.X, padx=10, pady=5)
 
-        tk.Button(self.sidebar, text="+ Add Custom DNS", command=self.add_dns).pack(fill=tk.X, padx=10, pady=10)
+        ttk.Button(self.sidebar, text="+ Add Custom DNS", command=self.add_dns).pack(fill=tk.X, padx=10, pady=10)
 
         self.progress = ttk.Progressbar(self.sidebar)
         self.progress.pack(fill=tk.X, padx=10, pady=10)
 
         # MAIN AREA
-        self.main = tk.Frame(self.root)
+        self.main = ttk.Frame(self.root, style='TFrame')
         self.main.grid(row=1, column=1, sticky="nsew")
 
         self.main.grid_rowconfigure(2, weight=1)
         self.main.grid_columnconfigure(0, weight=1)
 
-        self.fastest_label = tk.Label(self.main, text="Fastest: --")
+        self.fastest_label = ttk.Label(self.main, text="Fastest: --", style='TLabel')
         self.fastest_label.grid(row=0, column=0, sticky="w", padx=10, pady=5)
 
         # TABLE
-        self.table_frame = tk.Frame(self.main)
+        self.table_frame = ttk.Frame(self.main, style='TFrame')
         self.table_frame.grid(row=1, column=0, sticky="nsew")
 
         self.tree = ttk.Treeview(self.table_frame, columns=("dns", "ip", "lat"), show="headings")
@@ -120,7 +169,7 @@ class DNSApp:
         self.tree.pack(fill=tk.BOTH, expand=True)
 
         # GRAPH
-        self.graph_frame = tk.Frame(self.main)
+        self.graph_frame = ttk.Frame(self.main, style='TFrame')
         self.graph_frame.grid(row=2, column=0, sticky="nsew")
 
         # LOGS
@@ -225,72 +274,57 @@ class DNSApp:
 
     # ================= ADD DNS (FIXED BUTTON VISIBILITY) ================= #
     def add_dns(self):
-        # Determine colors based on current theme
-        if self.theme_mode == "dark":
-            dlg_bg  = "#0f172a"
-            dlg_fg  = "white"
-            entry_bg = "#1e293b"
-            entry_fg = "white"
-        else:
-            dlg_bg  = "#f3f4f6"
-            dlg_fg  = "black"
-            entry_bg = "white"
-            entry_fg = "black"
-
+        """Add custom DNS with ttk-based dialog for cross-platform consistency"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Add Custom DNS")
         dialog.geometry("350x210")
         dialog.resizable(False, False)
         dialog.grab_set()
         dialog.transient(self.root)
-        dialog.configure(bg=dlg_bg)
 
-        tk.Label(dialog, text="DNS Name:", font=("Segoe UI", 10),
-                 bg=dlg_bg, fg=dlg_fg).pack(pady=(14, 0), padx=14, anchor="w")
-        name_entry = tk.Entry(dialog, font=("Segoe UI", 10),
-                              bg=entry_bg, fg=entry_fg, insertbackground=dlg_fg,
-                              relief="solid", bd=1)
+        # Apply theme colors to dialog
+        if self.theme_mode == "dark":
+            dialog.configure(bg="#0f172a")
+        else:
+            dialog.configure(bg="#f3f4f6")
+
+        # Use ttk widgets for consistency
+        ttk.Label(dialog, text="DNS Name:", style='TLabel').pack(pady=(14, 0), padx=14, anchor="w")
+        name_entry = ttk.Entry(dialog, font=("Segoe UI", 10))
         name_entry.pack(fill=tk.X, padx=14, pady=4)
         name_entry.focus()
 
-        tk.Label(dialog, text="DNS Address (IP):", font=("Segoe UI", 10),
-                 bg=dlg_bg, fg=dlg_fg).pack(pady=(8, 0), padx=14, anchor="w")
-        addr_entry = tk.Entry(dialog, font=("Segoe UI", 10),
-                              bg=entry_bg, fg=entry_fg, insertbackground=dlg_fg,
-                              relief="solid", bd=1)
+        ttk.Label(dialog, text="DNS Address (IP):", style='TLabel').pack(pady=(8, 0), padx=14, anchor="w")
+        addr_entry = ttk.Entry(dialog, font=("Segoe UI", 10))
         addr_entry.pack(fill=tk.X, padx=14, pady=4)
 
-        btn_frame = tk.Frame(dialog, bg=dlg_bg)
+        btn_frame = ttk.Frame(dialog, style='TFrame')
         btn_frame.pack(pady=16)
 
         def save_dns():
             name = name_entry.get().strip()
             addr = addr_entry.get().strip()
             if not name or not addr:
-                self.add_log("Error: Both name and address required")
+                messagebox.showerror("Error", "Both name and address are required")
                 return
             self.dns[name] = addr
             self.add_log(f"DNS Added: {name} → {addr}")
             dialog.destroy()
             self.run_analysis()
 
-        tk.Button(btn_frame, text="OK", command=save_dns, width=10,
-                  bg="#10b981", fg="white", activebackground="#059669",
-                  activeforeground="white", relief="flat").pack(side=tk.LEFT, padx=6)
-
-        tk.Button(btn_frame, text="Cancel", command=dialog.destroy, width=10,
-                  bg="#ef4444", fg="white", activebackground="#dc2626",
-                  activeforeground="white", relief="flat").pack(side=tk.LEFT, padx=6)
+        # Use ttk buttons for consistency
+        ttk.Button(btn_frame, text="OK", command=save_dns).pack(side=tk.LEFT, padx=6)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=6)
 
     # ================= LIVE ================= #
     def toggle_live(self):
         self.live = not self.live
         if self.live:
-            self.live_btn.config(text="⏹ Live Mode (ON)", relief="sunken")
+            self.live_btn.config(text="⏹ Live Mode (ON)")
             self.add_log("Live Mode: ON")
             threading.Thread(target=self._live_loop, daemon=True).start()
         else:
-            self.live_btn.config(text="Live Mode", relief="raised")
+            self.live_btn.config(text="Live Mode")
             self.add_log("Live Mode: OFF")
 
     def _live_loop(self):
@@ -358,33 +392,21 @@ class DNSApp:
 
     # ================= EXPORT DIALOG ================= #
     def export_dialog(self):
-        if self.theme_mode == "dark":
-            dlg_bg = "#0f172a"
-            dlg_fg = "white"
-            btn_bg = "#1e293b"
-            btn_fg = "white"
-            btn_active = "#334155"
-        else:
-            dlg_bg = "#f3f4f6"
-            dlg_fg = "black"
-            btn_bg = "#e5e7eb"
-            btn_fg = "black"
-            btn_active = "#d1d5db"
-
+        """Export dialog using ttk widgets for cross-platform consistency"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Export As")
         dialog.geometry("280x210")
         dialog.resizable(False, False)
         dialog.grab_set()
         dialog.transient(self.root)
-        dialog.configure(bg=dlg_bg)
 
-        tk.Label(dialog, text="Choose Export Format", font=("Segoe UI", 11, "bold"),
-                 bg=dlg_bg, fg=dlg_fg).pack(pady=(18, 12))
+        # Apply theme colors
+        if self.theme_mode == "dark":
+            dialog.configure(bg="#0f172a")
+        else:
+            dialog.configure(bg="#f3f4f6")
 
-        btn_cfg = dict(width=18, font=("Segoe UI", 10), relief="flat",
-                       bg=btn_bg, fg=btn_fg, activebackground=btn_active,
-                       activeforeground=btn_fg, cursor="hand2")
+        ttk.Label(dialog, text="Choose Export Format", style='Title.TLabel').pack(pady=(18, 12))
 
         def do_export(fmt):
             dialog.destroy()
@@ -395,9 +417,10 @@ class DNSApp:
             elif fmt == "excel":
                 self.export_excel()
 
-        tk.Button(dialog, text="📄  PDF", command=lambda: do_export("pdf"),   **btn_cfg).pack(pady=5)
-        tk.Button(dialog, text="📊  CSV", command=lambda: do_export("csv"),   **btn_cfg).pack(pady=5)
-        tk.Button(dialog, text="📗  Excel (.xlsx)", command=lambda: do_export("excel"), **btn_cfg).pack(pady=5)
+        # Use ttk buttons for consistency
+        ttk.Button(dialog, text="📄  PDF", command=lambda: do_export("pdf")).pack(pady=5)
+        ttk.Button(dialog, text="📊  CSV", command=lambda: do_export("csv")).pack(pady=5)
+        ttk.Button(dialog, text="📗  Excel (.xlsx)", command=lambda: do_export("excel")).pack(pady=5)
 
     # ================= EXPORT ================= #
     def export_pdf(self):
@@ -438,49 +461,90 @@ class DNSApp:
 
     # ================= THEME ================= #
     def apply_theme(self):
+        """Apply theme using ttk styles for cross-platform consistency"""
 
         if self.theme_mode == "dark":
+            # Dark theme colors
             bg = "#0a0f1a"
             card = "#0f172a"
             fg = "white"
+            accent = "#38bdf8"
+            button_bg = "#374151"
+            button_fg = "white"
+            tree_bg = "#1f2937"
+            tree_fg = "white"
+            tree_heading_bg = "#111827"
+            tree_heading_fg = "white"
         else:
+            # Light theme colors
             bg = "#ffffff"
             card = "#f3f4f6"
             fg = "black"
+            accent = "#3b82f6"
+            button_bg = "#f3f4f6"
+            button_fg = "black"
+            tree_bg = "#ffffff"
+            tree_fg = "black"
+            tree_heading_bg = "#f9fafb"
+            tree_heading_fg = "black"
 
+        # Configure ttk styles
+        self.style.configure('TFrame', background=bg)
+        self.style.configure('Card.TFrame', background=card)
+
+        self.style.configure('TButton',
+                           background=button_bg,
+                           foreground=button_fg,
+                           font=('Segoe UI', 9))
+
+        self.style.configure('TLabel',
+                           background=bg,
+                           foreground=fg,
+                           font=('Segoe UI', 9))
+
+        self.style.configure('Title.TLabel',
+                           background=card,
+                           foreground=fg,
+                           font=('Segoe UI', 11, 'bold'))
+
+        self.style.configure('Status.TLabel',
+                           background=card,
+                           foreground=fg,
+                           font=('Segoe UI', 9))
+
+        # Treeview styling
+        self.style.configure('Treeview',
+                           background=tree_bg,
+                           foreground=tree_fg,
+                           fieldbackground=tree_bg,
+                           font=('Segoe UI', 9),
+                           rowheight=25)
+
+        self.style.configure('Treeview.Heading',
+                           background=tree_heading_bg,
+                           foreground=tree_heading_fg,
+                           font=('Segoe UI', 10, 'bold'))
+
+        # Map for interactive states
+        self.style.map('TButton',
+                      background=[('active', accent),
+                                ('pressed', accent)])
+
+        self.style.map('Treeview',
+                      background=[('selected', accent)],
+                      foreground=[('selected', 'white')])
+
+        # Update root window background (tk widget)
         self.root.configure(bg=bg)
-        self.main.configure(bg=bg)
-        self.sidebar.configure(bg=card)
-        self.topbar.configure(bg=card)
-        self.table_frame.configure(bg=bg)
-        self.graph_frame.configure(bg=bg)
-        self.log.configure(bg=card, fg=fg)
 
-        self.title.configure(bg=card, fg=fg)
-        self.status.configure(bg=card, fg=fg)
-        self.fastest_label.configure(bg=bg, fg=fg)
+        # Update log widget (tk widget, not ttk)
+        if hasattr(self, 'log'):
+            self.log.configure(bg=card, fg=fg, insertbackground=fg)
 
-        # TABLE THEME FIX
-        style = ttk.Style()
-        style.theme_use("clam")
+        # Update graph background
+        self.draw_graph()
 
-        style.configure("Treeview",
-            background=card,
-            fieldbackground=card,
-            foreground=fg,
-            rowheight=28
-        )
-
-        style.configure("Treeview.Heading",
-            background=bg,
-            foreground=fg,
-            font=("Segoe UI", 10, "bold")
-        )
-
-        style.map("Treeview",
-            background=[("selected", "#38bdf8")],
-            foreground=[("selected", "black")]
-        )
+        self.add_log(f"Theme switched → {self.theme_mode}")
 
     # ================= THEME TOGGLE ================= #
     def toggle_theme(self):
