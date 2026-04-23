@@ -67,11 +67,11 @@ class DNSApp:
         """Setup ttk styles for cross-platform consistency"""
         self.style = ttk.Style()
 
-        # Use 'clam' theme for better cross-platform consistency
+  
         try:
             self.style.theme_use('clam')
         except tk.TclError:
-            # Fallback to default theme if clam is not available
+
             pass
 
         # Configure base styles
@@ -92,7 +92,7 @@ class DNSApp:
                            font=('Segoe UI', 11, 'bold'),
                            background='#f3f4f6')
 
-        # ── REMOVED Status.TLabel (no longer used) ── #
+     
 
         # Treeview styles
         self.style.configure('Treeview',
