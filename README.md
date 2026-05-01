@@ -6,7 +6,7 @@
 2. Harleen Kaur 2210990366
 3. Aryan Thakur 2210991392
 ---
-Type: Copyright
+Type: Copyright \
 Current Status : Waiting
 ---
 # Description
